@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  master:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+     - "8089:8089"
+    volumes:
+      - .:/vertica
+    command: -f /vertica/test_vertica.py --master -H http://master:8089
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/vertica
+    command: -f /vertica/test_vertica.py --worker --master-host master
+
+  vertica_db:
+    image: jbfavre/vertica:latest
+    ports:
+      - "5433:5433"
+    environment:
+      - USER=dbadmin
+      - DATABASE=docker
+      - AUTOCOMMIT=true
+      - READ_TIMEOUT=600
+      - UNICODE_ERROR=strict
+      - SSL=false
+    volumes:
+      - .:/vertica
