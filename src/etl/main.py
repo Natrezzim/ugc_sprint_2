@@ -1,7 +1,9 @@
 import json
+import logging
 import uuid
 
 import backoff
+import ecs_logging
 from clickhouse_driver import Client
 from kafka import KafkaConsumer, TopicPartition, OffsetAndMetadata
 from kafka.errors import NoBrokersAvailable
@@ -11,6 +13,12 @@ from config import Settings
 settings = Settings()
 
 MESSAGES_COUNT = settings.messages_count
+
+logger = logging.getLogger("etl-app")
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler('logs/etl-app.json')
+handler.setFormatter(ecs_logging.StdlibFormatter())
+logger.addHandler(handler)
 
 
 def create_table(client) -> None:
@@ -28,6 +36,7 @@ def create_table(client) -> None:
             time Int64
             ) Engine=MergeTree() ORDER BY id
      """)
+    logger.info('Table Created')
 
 
 @backoff.on_exception(backoff.expo, Exception, max_tries=3)
@@ -43,6 +52,7 @@ def insert_in_clickhouse(client, data: list) -> None:
         INSERT INTO views (
         id, user_id, movie_id, timestamp_movie, time)  VALUES {}
         '''.format(', '.join(i for i in data)))
+    logger.info(f'Inserted {data}')
 
 
 def etl(consumer: KafkaConsumer, clickhouse_client: Client) -> None:
@@ -54,6 +64,7 @@ def etl(consumer: KafkaConsumer, clickhouse_client: Client) -> None:
     """
     data = []
     for message in consumer:
+        logger.info(f'Original message: {message}')
         one_msg = (str(uuid.uuid4()), *str(message.key.decode('utf-8')).split('+'), message.value, message.timestamp)
         data.append(str(one_msg))
         if len(data) == MESSAGES_COUNT:

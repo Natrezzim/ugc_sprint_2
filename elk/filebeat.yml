@@ -6,6 +6,16 @@ filebeat.inputs:
   json:
     keys_under_root: true
     add_error_key: true
+  tags: ["nginx"]
+
+- type: log
+  enabled: true
+  paths:
+    - /var/log/etl/*
+  json:
+    keys_under_root: true
+    add_error_key: true
+  tags: ["etl"]
 
 output.logstash:
   enabled: true

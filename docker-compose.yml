@@ -35,6 +35,8 @@ services:
       dockerfile: ./Dockerfile
     depends_on:
       - service
+    volumes:
+      - etl_ugc:/usr/src/logs/
 
   zookeeper:
     container_name: ugc_zookeeper
@@ -99,6 +101,7 @@ services:
     command: filebeat -e -strict.perms=false
     volumes:
       - ugc_nginx:/var/log/nginx:ro
+      - etl_ugc:/var/log/etl:ro
       - ./elk/filebeat.yml:/usr/share/filebeat/filebeat.yml
     depends_on:
       - service
@@ -153,3 +156,4 @@ volumes:
   ugc_zookeeper:
   ugc_elastic:
   ugc_nginx:
+  etl_ugc:
