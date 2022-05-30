@@ -1,0 +1,75 @@
+@startuml
+skinparam componentStyle uml2
+
+title "Онлайн Кинотеатр"
+
+actor "Пользователь" as user
+actor "Менеджеры" as manager
+
+cloud "Интернет" as internet{
+}
+
+cloud "Интернет" as manager_internet{
+}
+
+node "API Gateway" as api{
+}
+
+node "Admin panel" as admin_panel {
+component "Data migration app" as ap_data_migration
+component "Django app" as ap_django
+component "Nginx" as ap_nginx
+database "Sqlite" as ap_db_slt
+database "PostgreSQL" as ap_db_pg
+ap_django <--> ap_db_pg
+ap_django <-> ap_nginx
+ap_db_pg <- ap_data_migration
+ap_data_migration <- ap_db_slt
+}
+
+node "Full text search" as fts{
+component "ETL(extract, transform, load)" as fts_etl
+database "Elasticsearch" as fts_elastic
+fts_etl ---> fts_elastic
+}
+
+node "Async API"{
+component "FastAPI app" as asyncapi_app
+component "Nginx" as asyncapi_nginx
+database "Redis Cluster" as asyncapi_redis
+asyncapi_app <---> asyncapi_redis
+asyncapi_app <-> asyncapi_nginx
+}
+
+node "Auth service" as auth_service {
+component "Flask app" as auth_flask_app
+database "PostgreSQL" as auth_db_pg
+database "Redis" as auth_db_redis
+component "Nginx" as auth_nginx
+component "gRPC" as auth_grpc
+auth_flask_app <--> auth_db_pg
+auth_flask_app <--> auth_db_redis
+auth_nginx <--> auth_flask_app
+auth_grpc <---> auth_db_pg
+}
+
+
+user <--> internet
+internet <----> api
+api <----> auth_nginx
+api <----> asyncapi_nginx
+auth_grpc <-[#800080]> asyncapi_app : <size:16><i><b>gRPC</b></i></size>\n
+
+ap_db_pg <---> fts_etl
+asyncapi_app <--- fts_elastic
+
+manager <--> manager_internet
+manager_internet <----> ap_nginx
+
+
+
+legend left
+    |<#0000FF>     | Legend |
+end legend
+
+@enduml

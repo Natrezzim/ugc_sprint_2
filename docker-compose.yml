@@ -1,0 +1,84 @@
+services:
+
+  service:
+    container_name: ugc_api
+    build:
+      context: ./src/api
+      dockerfile: ./Dockerfile
+    ports:
+      - "8010:8010"
+    env_file:
+      - ./src/api/app/.env
+    entrypoint: /usr/local/bin/entrypoint.sh
+    depends_on:
+      - kafka
+      - zookeeper
+
+  nginx:
+    container_name: ugc_nginx
+    build:
+      context: ./src/nginx
+      dockerfile: ./Dockerfile
+    ports:
+      - "80:80"
+    env_file:
+      - ./src/etl/.env
+    depends_on:
+      - service
+
+  etl:
+    container_name: ugc_etl
+    build:
+      context: ./src/etl
+      dockerfile: ./Dockerfile
+    depends_on:
+      - service
+
+  zookeeper:
+    container_name: ugc_zookeeper
+    image: confluentinc/cp-zookeeper:7.0.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 22181:2181
+    volumes:
+      - ugc_zookeeper:/data
+
+  kafka:
+    container_name: ugc_kafka
+    image: confluentinc/cp-kafka:7.0.1
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CREATE_TOPICS: "views"
+    volumes:
+      - ugc_kafka:/var/lib/kafka/data
+
+  clickhouse-server:
+    image: yandex/clickhouse-server:21.3.20.1
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ugc_clickhouse_db:/var/lib/clickhouse
+
+  clickhouse-client:
+    image: yandex/clickhouse-client:21.3.20.1
+    entrypoint:
+      - /bin/sleep
+    command:
+      - infinity
+
+volumes:
+  ugc_clickhouse_db:
+  ugc_kafka:
+  ugc_zookeeper:
