@@ -7,14 +7,14 @@ from aiokafka.errors import KafkaConnectionError
 
 
 @backoff.on_exception(backoff.expo, KafkaConnectionError)
-async def ping():
+async def ping() -> None:
     consumer = AIOKafkaConsumer(
         'views',
-        bootstrap_servers='{}:{}'.format(
+        bootstrap_servers='{0}:{1}'.format(
             os.getenv('KAFKA_HOST'),
-            os.getenv('KAFKA_PORT')
+            os.getenv('KAFKA_PORT'),
         ),
-        group_id="test-group"
+        group_id="test-group",
     )
 
     try:

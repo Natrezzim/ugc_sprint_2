@@ -22,21 +22,21 @@ app = FastAPI(
 
 
 @app.on_event('startup')
-async def startup():
+async def startup() -> None:
     kafka_producer.aio_producer = AIOKafkaProducer(
         **{
-            'bootstrap_servers': '{}:{}'.format(settings.kafka_host, settings.kafka_port)
-        }
+            'bootstrap_servers': '{0}:{1}'.format(settings.kafka_host, settings.kafka_port),
+        },
     )
     await kafka_producer.aio_producer.start()
 
 
 @app.on_event('shutdown')
-async def shutdown():
-    await kafka_producer.aio_producer.stop()
+async def shutdown() -> None:
+    await kafka_producer.aio_producer.stop()  # type: ignore[union-attr]
 
 
 app.include_router(view_film.router, prefix='/api/v1/view_film')
 
 if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port=8000)
+    uvicorn.run(app, host='0.0.0.0', port=8000)  # noqa S104
