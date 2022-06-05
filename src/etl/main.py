@@ -1,21 +1,21 @@
 import json
 import uuid
+from typing import List
 
 import backoff
 from clickhouse_driver import Client
-from kafka import KafkaConsumer, TopicPartition, OffsetAndMetadata
-from kafka.errors import NoBrokersAvailable
-
 from config import Settings
+from kafka import KafkaConsumer, OffsetAndMetadata, TopicPartition
+from kafka.errors import NoBrokersAvailable
 
 settings = Settings()
 
 MESSAGES_COUNT = settings.messages_count
 
 
-def create_table(client) -> None:
+def create_table(client: Client) -> None:
     """
-    Creating table in Clickhouse
+    Create table in Clickhouse.
 
     :param client: Clickhouse connection
     """
@@ -31,23 +31,23 @@ def create_table(client) -> None:
 
 
 @backoff.on_exception(backoff.expo, Exception, max_tries=3)
-def insert_in_clickhouse(client, data: list) -> None:
+def insert_in_clickhouse(client: Client, data: List[str]) -> None:
     """
-    Inserting data in clickhouse
+    Insert data in clickhouse.
 
     :param client: Clickhouse connection
     :param data: Data for load
     """
     client.execute(
-        '''
+        """
         INSERT INTO views (
-        id, user_id, movie_id, timestamp_movie, time)  VALUES {}
-        '''.format(', '.join(i for i in data)))
+        id, user_id, movie_id, timestamp_movie, time)  VALUES {0}
+        """.format(', '.join(i for i in data)))
 
 
 def etl(consumer: KafkaConsumer, clickhouse_client: Client) -> None:
     """
-    Transform data and load to Clickhouse
+    Transform data and load to Clickhouse.
 
     :param consumer: Kafka consumer connection
     :param clickhouse_client: Clickhouse connection
@@ -66,17 +66,14 @@ def etl(consumer: KafkaConsumer, clickhouse_client: Client) -> None:
 
 @backoff.on_exception(backoff.expo, NoBrokersAvailable)
 def main() -> None:
-    """
-    Main method
-
-    """
+    """Make etl process method."""
     consumer = KafkaConsumer(
         settings.kafka_topic,
         bootstrap_servers=[f'{settings.kafka_host}:{settings.kafka_port}'],
         auto_offset_reset='earliest',
         enable_auto_commit=False,
         group_id='movies',
-        value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+        value_deserializer=lambda x: json.loads(x.decode('utf-8')),
     )
     clickhouse_client = Client(host=settings.clickhouse_host, port=settings.clickhouse_port)
 
