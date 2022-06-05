@@ -14,6 +14,7 @@ settings = Settings()
 
 MESSAGES_COUNT = settings.messages_count
 
+
 logger = logging.getLogger("etl-app")
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler('logs/etl-app.json')

@@ -1,3 +1,4 @@
+
 import sentry_sdk
 import uvicorn
 from aiokafka import AIOKafkaProducer
@@ -23,6 +24,7 @@ app = FastAPI(
     description='Сбор статистики пользователей',
     version='1.0.0',
 )
+
 
 sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
 
@@ -51,16 +53,17 @@ async def startup():
         **{
             'bootstrap_servers': '{}:{}'.format(settings.kafka_host, settings.kafka_port)
         }
+
     )
     await kafka_producer.aio_producer.start()
 
 
 @app.on_event('shutdown')
-async def shutdown():
-    await kafka_producer.aio_producer.stop()
+async def shutdown() -> None:
+    await kafka_producer.aio_producer.stop()  # type: ignore[union-attr]
 
 
 app.include_router(view_film.router, prefix='/api/v1/view_film')
 
 if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port=8000)
+    uvicorn.run(app, host='0.0.0.0', port=8000)  # noqa S104
