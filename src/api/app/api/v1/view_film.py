@@ -3,8 +3,8 @@ from typing import Dict
 from uuid import UUID
 
 from aiokafka import AIOKafkaProducer
-from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPBasicCredentials
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPBasicCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from app.db.kafka_producer import get_producer

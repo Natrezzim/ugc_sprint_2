@@ -32,8 +32,8 @@ jobs:
           mkdir -p lint_report/src/etl/mypy/
       - name: mypy
         run: |
-          mypy --html-report lint_report/src/api/mypy/ src/api/* || true
-          mypy --html-report lint_report/src/etl/mypy/ src/etl/* || true
+          mypy --html-report lint_report/src/api/mypy/ src/api* || true
+          mypy --html-report lint_report/src/etl/mypy/ src/etl* || true
       - name: lint-codestyle
         run: |
           flake8 src/api --exit-zero --format=html --htmldir=lint_report/src/api/styleguide/
@@ -43,16 +43,3 @@ jobs:
         with:
           name: lint_report
           path: lint_report/
-      - name: Telegram Notify
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          format: markdown
-          message: |
-            ${{ github.actor }} open new pull request:
-
-            Repository: ${{ github.repository }}
-
-            See changes: https://github.com/${{ github.repository }}/commit/${{github.sha}}
-            See all pull_requests: https://github.com/${{ github.repository }}/pulls
