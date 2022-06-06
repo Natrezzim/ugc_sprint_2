@@ -1,4 +1,5 @@
 from http import HTTPStatus
+
 from typing import Dict
 from uuid import UUID
 
@@ -12,7 +13,6 @@ from app.service.auth import Auth
 
 security = HTTPBearer()
 auth_handler = Auth()
-
 router = APIRouter()
 
 
@@ -40,6 +40,7 @@ async def film_views(
             "views",
             key='{0}+{1}'.format(user_id, viewed.movie_id).encode(),
             value='{0}'.format(viewed.viewed_time).encode(),
+
         )
         return {"saved": 'ok'}
 

@@ -6,7 +6,7 @@ services:
       context: ./src/api
       dockerfile: ./Dockerfile
     ports:
-      - "8010:8010"
+      - 8010:8010
     env_file:
       - ./src/api/app/.env
     entrypoint: /usr/local/bin/entrypoint.sh
@@ -20,7 +20,9 @@ services:
       context: ./src/nginx
       dockerfile: ./Dockerfile
     ports:
-      - "80:80"
+      - 80:80
+    volumes:
+      - ugc_nginx:/var/log/nginx/
     env_file:
       - ./src/etl/.env
     depends_on:
@@ -33,6 +35,8 @@ services:
       dockerfile: ./Dockerfile
     depends_on:
       - service
+    volumes:
+      - etl_ugc:/usr/src/logs/
 
   zookeeper:
     container_name: ugc_zookeeper
@@ -59,26 +63,97 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_CREATE_TOPICS: "views"
+      KAFKA_CREATE_TOPICS: views
     volumes:
       - ugc_kafka:/var/lib/kafka/data
 
   clickhouse-server:
+    container_name: ugc_clickhouse_server
     image: yandex/clickhouse-server:21.3.20.1
     ports:
-      - "8123:8123"
-      - "9000:9000"
+      - 8123:8123
+      - 9000:9000
     volumes:
       - ugc_clickhouse_db:/var/lib/clickhouse
 
   clickhouse-client:
+    container_name: ugc_clickhouse_client
     image: yandex/clickhouse-client:21.3.20.1
     entrypoint:
       - /bin/sleep
     command:
       - infinity
 
+  logstash:
+    container_name: ugc_logstash
+    image: elastic/logstash:7.10.1
+    depends_on:
+      - elasticsearch
+    ports:
+      - 12201:12201/udp
+    volumes:
+      - ./elk/logstash.conf:/config/logstash.conf:ro
+    command: logstash -f /config/logstash.conf
+
+  filebeat:
+    container_name: ugc_filebeat
+    image: elastic/filebeat:7.3.2
+    command: filebeat -e -strict.perms=false
+    volumes:
+      - ugc_nginx:/var/log/nginx:ro
+      - etl_ugc:/var/log/etl:ro
+      - ./elk/filebeat.yml:/usr/share/filebeat/filebeat.yml
+    depends_on:
+      - service
+      - nginx
+      - logstash
+      - elasticsearch
+      - kibana
+    links:
+      - logstash
+
+  elasticsearch:
+    container_name: ugc_elasticsearch
+    image: elastic/elasticsearch:7.10.1
+    environment:
+      discovery.type: single-node
+    ports:
+      - 9200:9200
+    volumes:
+       - ugc_elastic:/tmp/elasticsearch/data
+
+  apm-server:
+    container_name: ugc_apm_server
+    image: elastic/apm-server:7.10.1
+    cap_add: [ "CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID" ]
+    cap_drop: [ "ALL" ]
+    ports:
+      - 8200:8200
+    command: >
+      apm-server -e
+        -E apm-server.rum.enabled=true
+        -E setup.kibana.host=kibana:5601
+        -E setup.template.settings.index.number_of_replicas=0
+        -E apm-server.kibana.enabled=true
+        -E apm-server.kibana.host=kibana:5601
+        -E output.elasticsearch.hosts=["elasticsearch:9200"]
+    healthcheck:
+      interval: 10s
+      retries: 12
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:8200/
+
+  kibana:
+    container_name: ugc_kibana
+    image: elastic/kibana:7.10.1
+    ports:
+      - 5601:5601
+    depends_on:
+       - elasticsearch
+
 volumes:
   ugc_clickhouse_db:
   ugc_kafka:
   ugc_zookeeper:
+  ugc_elastic:
+  ugc_nginx:
+  etl_ugc:

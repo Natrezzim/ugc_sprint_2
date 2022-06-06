@@ -1,21 +1,30 @@
 import json
+import logging
 import uuid
-from typing import List
 
 import backoff
+import ecs_logging
 from clickhouse_driver import Client
-from config import Settings
-from kafka import KafkaConsumer, OffsetAndMetadata, TopicPartition
+from kafka import KafkaConsumer, TopicPartition, OffsetAndMetadata
 from kafka.errors import NoBrokersAvailable
+
+from config import Settings
 
 settings = Settings()
 
 MESSAGES_COUNT = settings.messages_count
 
 
-def create_table(client: Client) -> None:
+logger = logging.getLogger("etl-app")
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler('logs/etl-app.json')
+handler.setFormatter(ecs_logging.StdlibFormatter())
+logger.addHandler(handler)
+
+
+def create_table(client) -> None:
     """
-    Create table in Clickhouse.
+    Creating table in Clickhouse
 
     :param client: Clickhouse connection
     """
@@ -28,32 +37,35 @@ def create_table(client: Client) -> None:
             time Int64
             ) Engine=MergeTree() ORDER BY id
      """)
+    logger.info('Table Created')
 
 
 @backoff.on_exception(backoff.expo, Exception, max_tries=3)
-def insert_in_clickhouse(client: Client, data: List[str]) -> None:
+def insert_in_clickhouse(client, data: list) -> None:
     """
-    Insert data in clickhouse.
+    Inserting data in clickhouse
 
     :param client: Clickhouse connection
     :param data: Data for load
     """
     client.execute(
-        """
+        '''
         INSERT INTO views (
-        id, user_id, movie_id, timestamp_movie, time)  VALUES {0}
-        """.format(', '.join(i for i in data)))
+        id, user_id, movie_id, timestamp_movie, time)  VALUES {}
+        '''.format(', '.join(i for i in data)))
+    logger.info(f'Inserted {data}')
 
 
 def etl(consumer: KafkaConsumer, clickhouse_client: Client) -> None:
     """
-    Transform data and load to Clickhouse.
+    Transform data and load to Clickhouse
 
     :param consumer: Kafka consumer connection
     :param clickhouse_client: Clickhouse connection
     """
     data = []
     for message in consumer:
+        logger.info(f'Original message: {message}')
         one_msg = (str(uuid.uuid4()), *str(message.key.decode('utf-8')).split('+'), message.value, message.timestamp)
         data.append(str(one_msg))
         if len(data) == MESSAGES_COUNT:
@@ -66,14 +78,17 @@ def etl(consumer: KafkaConsumer, clickhouse_client: Client) -> None:
 
 @backoff.on_exception(backoff.expo, NoBrokersAvailable)
 def main() -> None:
-    """Make etl process method."""
+    """
+    Main method
+
+    """
     consumer = KafkaConsumer(
         settings.kafka_topic,
         bootstrap_servers=[f'{settings.kafka_host}:{settings.kafka_port}'],
         auto_offset_reset='earliest',
         enable_auto_commit=False,
         group_id='movies',
-        value_deserializer=lambda x: json.loads(x.decode('utf-8')),
+        value_deserializer=lambda x: json.loads(x.decode('utf-8'))
     )
     clickhouse_client = Client(host=settings.clickhouse_host, port=settings.clickhouse_port)
 
