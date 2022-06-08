@@ -9,6 +9,7 @@ from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from app.api.v1 import likes, review, bookmarks
 from app.core.config import Settings
 from app.db import mongo_db
+
 settings = Settings()
 
 app = FastAPI(
@@ -48,8 +49,6 @@ async def startup():
         'mongodb://{}:{}'.format(settings.mongo_host, settings.mongo_port)
     )
     mongo_db.mongo = client[settings.mongo_db_name]
-    mongo_db.mongo.get_collection("test")
-
 
 
 @app.on_event('shutdown')
