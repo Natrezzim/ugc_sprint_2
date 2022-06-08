@@ -23,8 +23,6 @@ services:
       - 80:80
     volumes:
       - ugc_nginx:/var/log/nginx/
-    env_file:
-      - ./src/etl/.env
     depends_on:
       - service
 
@@ -33,6 +31,8 @@ services:
     build:
       context: ./src/etl
       dockerfile: ./Dockerfile
+    env_file:
+      - ./src/etl/.env
     depends_on:
       - service
     volumes:
@@ -84,17 +84,6 @@ services:
     command:
       - infinity
 
-  logstash:
-    container_name: ugc_logstash
-    image: elastic/logstash:7.10.1
-    depends_on:
-      - elasticsearch
-    ports:
-      - 12201:12201/udp
-    volumes:
-      - ./elk/logstash.conf:/config/logstash.conf:ro
-    command: logstash -f /config/logstash.conf
-
   filebeat:
     container_name: ugc_filebeat
     image: elastic/filebeat:7.3.2
@@ -102,58 +91,19 @@ services:
     volumes:
       - ugc_nginx:/var/log/nginx:ro
       - etl_ugc:/var/log/etl:ro
-      - ./elk/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./src/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
     depends_on:
       - service
       - nginx
-      - logstash
-      - elasticsearch
-      - kibana
-    links:
-      - logstash
-
-  elasticsearch:
-    container_name: ugc_elasticsearch
-    image: elastic/elasticsearch:7.10.1
-    environment:
-      discovery.type: single-node
-    ports:
-      - 9200:9200
-    volumes:
-       - ugc_elastic:/tmp/elasticsearch/data
-
-  apm-server:
-    container_name: ugc_apm_server
-    image: elastic/apm-server:7.10.1
-    cap_add: [ "CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID" ]
-    cap_drop: [ "ALL" ]
-    ports:
-      - 8200:8200
-    command: >
-      apm-server -e
-        -E apm-server.rum.enabled=true
-        -E setup.kibana.host=kibana:5601
-        -E setup.template.settings.index.number_of_replicas=0
-        -E apm-server.kibana.enabled=true
-        -E apm-server.kibana.host=kibana:5601
-        -E output.elasticsearch.hosts=["elasticsearch:9200"]
-    healthcheck:
-      interval: 10s
-      retries: 12
-      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:8200/
-
-  kibana:
-    container_name: ugc_kibana
-    image: elastic/kibana:7.10.1
-    ports:
-      - 5601:5601
-    depends_on:
-       - elasticsearch
 
 volumes:
   ugc_clickhouse_db:
   ugc_kafka:
   ugc_zookeeper:
-  ugc_elastic:
   ugc_nginx:
   etl_ugc:
+
+networks:
+  default:
+    external:
+      name: ugc-network
