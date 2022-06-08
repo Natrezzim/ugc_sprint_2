@@ -2,8 +2,8 @@ fastapi==0.75.0
 uvicorn==0.17.6
 uvloop==0.16.0
 orjson==3.6.7
-aiokafka==0.7.2
 PyJWT==2.4.0
 backoff==2.0.1
 sentry-sdk==1.5.12
 elastic-apm==6.9.1
+motor==3.0.0
