@@ -1,13 +1,14 @@
-from typing import Union
-
+import motor
 import sentry_sdk
 import uvicorn
+from elasticapm.contrib.starlette import make_apm_client, ElasticAPM
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
-from elasticapm.contrib.starlette import make_apm_client, ElasticAPM
 
+from app.api.v1 import likes, review, bookmarks
 from app.core.config import Settings
+from app.db import mongo_db
 
 settings = Settings()
 
@@ -43,23 +44,25 @@ app.add_middleware(ElasticAPM, client=apm)
 
 @app.on_event('startup')
 async def startup():
-    return print('Hello World!')
+    client = motor.motor_asyncio.AsyncIOMotorClient(
+        'mongodb://{}:{}'.format(settings.mongo_host, settings.mongo_port)
+    )
+    mongo_db.mongo = client[settings.mongo_db_name]
 
 
 @app.on_event('shutdown')
 async def shutdown() -> None:
-    return print('Bye World!')
+    mongo_db.mongo.close()
 
 
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
+async def read_root():
+    return {"Hello": "World!"}
 
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
-
+app.include_router(likes.router, prefix='/api/v1/likes')
+app.include_router(review.router, prefix='/api/v1/review')
+app.include_router(bookmarks.router, prefix='/api/v1/bookmarks', tags=["Bookmarks"])
 
 if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=8000)  # noqa S104
