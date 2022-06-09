@@ -2,7 +2,8 @@ from http import HTTPStatus
 from typing import Dict
 
 import jwt
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import Settings
 
@@ -22,3 +23,7 @@ class Auth:
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail='Token expired')
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail='Invalid token')
+
+    def __call__(self, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
+        token = credentials.credentials
+        return self.decode_token(token)

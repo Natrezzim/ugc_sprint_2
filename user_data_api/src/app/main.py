@@ -44,7 +44,6 @@ app.add_middleware(ElasticAPM, client=apm)
 
 @app.on_event('startup')
 async def startup():
-
     client = motor.motor_asyncio.AsyncIOMotorClient(
         'mongodb://{}:{}'.format(settings.mongo_host, settings.mongo_port)
     )
@@ -63,8 +62,7 @@ async def read_root():
 
 app.include_router(likes.router, prefix='/api/v1/likes')
 app.include_router(review.router, prefix='/api/v1/review')
-app.include_router(bookmarks.router, prefix='/api/v1/bookmarks')
-
+app.include_router(bookmarks.router, prefix='/api/v1/bookmarks', tags=["Bookmarks"])
 
 if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=8000)  # noqa S104
