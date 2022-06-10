@@ -26,7 +26,7 @@ class UserReviewsService:
                 "movie_id": movie_id,
                 "review_id": review_id,
                 "user_id": user_id,
-                "created": datetime.today().replace(microsecond=0),
+                "created": datetime.datetime.today().replace(microsecond=0),
                 "text": text
             }
         )
