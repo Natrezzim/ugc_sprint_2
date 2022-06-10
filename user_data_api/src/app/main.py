@@ -21,25 +21,25 @@ app = FastAPI(
     version='1.0.0',
 )
 
-sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
-
-app.add_middleware(SentryAsgiMiddleware)
-
-apm_config = {
-    "SERVICE_NAME": "user-data-app",
-    "SERVER_URL": f"http://{settings.apm_server_host}:{settings.apm_server_port}",
-    "ENVIRONMENT": "dev",
-    "GLOBAL_LABELS": "platform=localhost, application=user-data-app",
-    "TRANSACTION_MAX_SPANS": 250,
-    "STACK_TRACE_LIMIT": 250,
-    "TRANSACTION_SAMPLE_RATE": 0.5,
-    "APTURE_HEADERS": "false",
-    "CAPTURE_BODY": "all",
-}
-
-apm = make_apm_client(apm_config)
-
-app.add_middleware(ElasticAPM, client=apm)
+# sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
+#
+# app.add_middleware(SentryAsgiMiddleware)
+#
+# apm_config = {
+#     "SERVICE_NAME": "user-data-app",
+#     "SERVER_URL": f"http://{settings.apm_server_host}:{settings.apm_server_port}",
+#     "ENVIRONMENT": "dev",
+#     "GLOBAL_LABELS": "platform=localhost, application=user-data-app",
+#     "TRANSACTION_MAX_SPANS": 250,
+#     "STACK_TRACE_LIMIT": 250,
+#     "TRANSACTION_SAMPLE_RATE": 0.5,
+#     "APTURE_HEADERS": "false",
+#     "CAPTURE_BODY": "all",
+# }
+#
+# apm = make_apm_client(apm_config)
+#
+# app.add_middleware(ElasticAPM, client=apm)
 
 
 @app.on_event('startup')
@@ -65,4 +65,4 @@ app.include_router(review.router, prefix='/api/v1/review')
 app.include_router(bookmarks.router, prefix='/api/v1/bookmarks', tags=["Bookmarks"])
 
 if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port=8000)  # noqa S104
+    uvicorn.run(app, host='127.0.0.1', port=8000)  # noqa S104
