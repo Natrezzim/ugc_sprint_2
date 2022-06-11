@@ -24,7 +24,7 @@ async def add_like_dislike(
     like: bool,
     user_id: str = Depends(auth_handler),
     likes_service: MovieLikesService = Depends(get_user_bookmarks_service),
-):
+) -> MovieLikeSchema:
     movie_user_data = await likes_service.add_like_dislike(user_id, movie_id, like)
     return movie_user_data
 
@@ -40,7 +40,7 @@ async def remove_like_dislike(
     like: bool,
     user_id: str = Depends(auth_handler),
     likes_service: MovieLikesService = Depends(get_user_bookmarks_service),
-):
+) -> MovieLikeSchema:
     try:
         if movie_user_data := await likes_service.remove_like_dislike(user_id, movie_id, like):
             return movie_user_data
@@ -62,7 +62,7 @@ async def get_like_dislike(
     movie_id: UUID,
     likes_service: MovieLikesService = Depends(get_user_bookmarks_service),
     credentials: HTTPBasicCredentials = Depends(security),
-):
+) -> MovieLikeSchema:
     token = credentials.credentials  # type: ignore[attr-defined]
     auth_handler.decode_token(token)
 

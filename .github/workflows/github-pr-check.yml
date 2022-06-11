@@ -28,16 +28,20 @@ jobs:
         run: |
           mkdir -p lint_report/ugc/src/api/styleguide/
           mkdir -p lint_report/ugc/src/etl/styleguide/
+          mkdir -p lint_report/user_data_api/src/app/styleguide/
           mkdir -p lint_report/ugc/src/api/mypy/
           mkdir -p lint_report/ugc/src/etl/mypy/
+          mkdir -p lint_report/user_data_api/src/app/mypy/
       - name: mypy
         run: |
           mypy --html-report lint_report/ugc/src/api/mypy/ ugc/src/api* || true
           mypy --html-report lint_report/ugc/src/etl/mypy/ ugc/src/etl* || true
+          mypy --html-report lint_report/user_data_api/src/app/mypy/ /user_data_api/src/app* || true
       - name: lint-codestyle
         run: |
           flake8 ugc/src/api --exit-zero --format=html --htmldir=lint_report/ugc/src/api/styleguide/
           flake8 ugc/src/etl --exit-zero --format=html --htmldir=lint_report/ugc/src/etl/styleguide/
+          flake8 ugc/src/etl --exit-zero --format=html --htmldir=lint_report/user_data_api/src/app/styleguide/
       - name: load-report
         uses: actions/upload-artifact@v3.1.0
         with:
