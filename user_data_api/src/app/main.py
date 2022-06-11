@@ -55,6 +55,7 @@ async def shutdown() -> None:
     mongo_db.mongo.close()
 
 
+
 app.include_router(likes.router, prefix='/api/v1/likes')
 app.include_router(review.router, prefix='/api/v1/review')
 app.include_router(bookmarks.router, prefix='/api/v1/bookmarks', tags=["Bookmarks"])
