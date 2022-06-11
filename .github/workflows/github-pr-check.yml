@@ -41,7 +41,7 @@ jobs:
         run: |
           flake8 ugc/src/api --exit-zero --format=html --htmldir=lint_report/ugc/src/api/styleguide/
           flake8 ugc/src/etl --exit-zero --format=html --htmldir=lint_report/ugc/src/etl/styleguide/
-          flake8 ugc/src/etl --exit-zero --format=html --htmldir=lint_report/user_data_api/src/app/styleguide/
+          flake8 user_data_api/src/app --exit-zero --format=html --htmldir=lint_report/user_data_api/src/app/styleguide/
       - name: load-report
         uses: actions/upload-artifact@v3.1.0
         with:
