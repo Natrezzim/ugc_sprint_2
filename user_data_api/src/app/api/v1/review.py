@@ -14,18 +14,19 @@ router = APIRouter()
 auth_handler = Auth()
 
 
-@router.get('/',
-            response_model=List[UserReview],
-            description='Получить отзывы пользователя',
-            )
+@router.get(
+    '/',
+    response_model=List[UserReview],
+    description='Получить отзывы пользователя',
+)
 async def get_reviews(
-        movie_id: UUID,
-        rating_sort: Union[str, None] = None,
-        created_sort: Union[str, None] = None,
-        reviews_service: UserReviewsService = Depends(get_user_reviews_service)
-):
+    movie_id: UUID,
+    rating_sort: Union[str, None] = None,
+    created_sort: Union[str, None] = None,
+    reviews_service: UserReviewsService = Depends(get_user_reviews_service),
+) -> List[UserReview]:
     """
-    Getting list of reviews
+    Get list of reviews.
 
     :param movie_id: Movie ID
     :param rating_sort: Rating sorting[asc, desc]
@@ -35,24 +36,27 @@ async def get_reviews(
     """
     reviews = await reviews_service.get(movie_id, rating_sort, created_sort)
     if not reviews:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
-                            detail='user reviews not found')
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='user reviews not found',
+        )
     return reviews
 
 
-@router.post('/{movie_id}',
-             response_model=UserReview,
-             description='Добавить отзыв о фильме',
-             response_description='Возвращается добавленный отзыв',
-             )
+@router.post(
+    '/{movie_id}',
+    response_model=UserReview,
+    description='Добавить отзыв о фильме',
+    response_description='Возвращается добавленный отзыв',
+)
 async def add_review(
-        movie_id: str = UUID,
-        user_id: str = Depends(auth_handler),
-        text: str = None,
-        reviews_service: UserReviewsService = Depends(get_user_reviews_service)
-):
+    movie_id: UUID,
+    text: str,
+    user_id: str = Depends(auth_handler),
+    reviews_service: UserReviewsService = Depends(get_user_reviews_service),
+) -> UserReview:
     """
-    Adding new review to movie
+    Add new review to movie.
 
     :param movie_id: Movie ID
     :param user_id: User id
@@ -62,23 +66,26 @@ async def add_review(
     """
     reviews = await reviews_service.add(movie_id, user_id, text)
     if not reviews:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
-                            detail='movie not found')
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='movie not found',
+        )
     return reviews
 
 
-@router.post('/like/{review_id}',
-             response_model=UserReview,
-             description='Добавить лайк к рецензии',
-             response_description='Возвращается user_id',
-             )
+@router.post(
+    '/like/{review_id}',
+    response_model=UserReview,
+    description='Добавить лайк к рецензии',
+    response_description='Возвращается user_id',
+)
 async def add_like(
-        review_id: str = UUID,
-        user_id: str = Depends(auth_handler),
-        reviews_service: UserReviewsService = Depends(get_user_reviews_service)
-):
+    review_id: UUID,
+    user_id: str = Depends(auth_handler),
+    reviews_service: UserReviewsService = Depends(get_user_reviews_service),
+) -> Response:
     """
-    Adding like to review
+    Adding like to review.
 
     :param review_id: Review ID
     :param user_id: User id
@@ -91,23 +98,26 @@ async def add_like(
         if k == "like_by":
             response = {k: v}
     if not reviews:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
-                            detail='movie not found')
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='movie not found',
+        )
     return Response(content=json.dumps(response), media_type="application/json")
 
 
-@router.post('/dislike/{review_id}',
-             response_model=UserReview,
-             description='Добавить дизлайк к рецензии',
-             response_description='Возвращается user_id',
-             )
+@router.post(
+    '/dislike/{review_id}',
+    response_model=UserReview,
+    description='Добавить дизлайк к рецензии',
+    response_description='Возвращается user_id',
+)
 async def add_dislike(
-        review_id: str = UUID,
-        user_id: str = Depends(auth_handler),
-        reviews_service: UserReviewsService = Depends(get_user_reviews_service)
-):
+    review_id: str,
+    user_id: str = Depends(auth_handler),
+    reviews_service: UserReviewsService = Depends(get_user_reviews_service),
+) -> Response:
     """
-    Adding dislike to review
+    Adding dislike to review.
 
     :param review_id: Review ID
     :param user_id: User id
@@ -117,9 +127,11 @@ async def add_dislike(
     reviews = await reviews_service.add_dislike(user_id, review_id)
     response = {}
     for k, v in reviews.items():
-        if k == "dislike_by":
+        if k == "dislike_by": # type: ignore[comparison-overlap]
             response = {k: v}
     if not reviews:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
-                            detail='movie not found')
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='movie not found',
+        )
     return Response(content=json.dumps(response), media_type="application/json")

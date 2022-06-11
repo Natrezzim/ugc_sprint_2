@@ -24,6 +24,6 @@ class Auth:
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail='Invalid token')
 
-    def __call__(self, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
+    def __call__(self, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())) -> Dict[str, int]:
         token = credentials.credentials
         return self.decode_token(token)
