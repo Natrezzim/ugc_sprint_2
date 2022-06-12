@@ -21,9 +21,10 @@ app = FastAPI(
     version='1.0.0',
 )
 
-sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
+sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=0)
 
-app.add_middleware(SentryAsgiMiddleware)
+if settings.sentry_switch == 'ON':
+    app.add_middleware(SentryAsgiMiddleware)
 
 apm_config = {
     "SERVICE_NAME": "user-data-app",
