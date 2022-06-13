@@ -82,7 +82,7 @@ def insert_data(collection, collection_ids, func, count_reviews):
         collection.insert_many(data, ordered=False)
 
 
-if __name__ == '__main__':
+def init_data():
     user_ids = [str(uuid4()) for _ in range(COUNT_USERS)]
     movie_ids = [str(uuid4()) for _ in range(COUNT_MOVIES)]
     collections_data = {
@@ -105,10 +105,10 @@ if __name__ == '__main__':
             'indexes': ['rating', 'like_by', 'dislike_by']
         }
     }
+    return user_ids, movie_ids, collections_data
 
-    client = MongoClient('localhost', 27017)
-    db = client[DB_NAME]
 
+def create_collections():
     logger.info("Start setting collections")
     for collection_name, config in collections_settings.items():
         db[collection_name]
@@ -118,6 +118,8 @@ if __name__ == '__main__':
             client.admin.command('shardCollection', '{}.{}'.format(DB_NAME, collection_name),
                                  key={shard_key: "hashed"})
 
+
+def generate_data():
     logger.info("Started creating data")
     for collection_name, setting in collections_data.items():
         logger.info("Started insert data to collection: {}".format(collection_name))
@@ -133,3 +135,11 @@ if __name__ == '__main__':
             for index in indexes:
                 logger.info("Started create index '{}' to collection: {}".format(index, collection_name))
                 collection.create_index(index)
+
+
+if __name__ == '__main__':
+    user_ids, movie_ids, collections_data = init_data()
+    client = MongoClient('localhost', 27017)
+    db = client[DB_NAME]
+    create_collections()
+    generate_data()
