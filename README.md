@@ -3,6 +3,13 @@
 Ссылка на репозиторий для ревью.  
 https://github.com/Neoduss/ugc_sprint_2
 
+По замечанию №3
+-
+https://github.com/Neoduss/ugc_sprint_2/tree/main/ugc/src/api/app  - сервис отвечающий за прием времени остановки просмотра фильма для аналитиков  
+https://github.com/Neoduss/ugc_sprint_2/user_data_api/src/app/ - сервис для работы с лайками, ревью и закладками  
+
+
+
 Комманды для запуска проекта
 -
 
